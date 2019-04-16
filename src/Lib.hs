@@ -5,20 +5,23 @@ module Lib
 import System.Random
 import Euterpea
 
-randomPitchClass :: (RandomGen g) => g -> (PitchClass, g)
-randomPitchClass g = (toEnum randomInt, g')
-  where minPitchClass = minBound :: PitchClass
-        maxPitchClass = maxBound :: PitchClass
-        (randomInt, g') = randomR (fromEnum minPitchClass, fromEnum maxPitchClass) g
+instance Random PitchClass where
+    randomR (lower, upper) g = (toEnum randomInt, g')
+        where (randomInt, g') = randomR (fromEnum lower, fromEnum upper) g
+    random = randomR (minBound, maxBound)
+
+randomOctave :: RandomGen g => g -> (Octave, g)
+randomOctave = randomR (-1, 9)
 
 runQuiz :: IO ()
 runQuiz = do
     gen <- getStdGen
-    let (pitch, _) = randomPitchClass gen
-    play $ note 1 (pitch, 4 :: Octave)
+    let (pitch, gen') = random gen
+    let (octave, _) = randomOctave gen'
+    play $ note 1 (pitch, octave)
     putStrLn "What note did you hear?"
     answer <- getLine
     let answerPitch = read answer :: PitchClass
-    if absPitch (answerPitch, 4) == absPitch (pitch, 4)
+    if absPitch (answerPitch, octave) == absPitch (pitch, octave)
         then putStrLn "Correct"
         else putStrLn $ "Wrong: that was a " ++ show pitch
