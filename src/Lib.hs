@@ -1,5 +1,5 @@
 module Lib
-    ( runQuiz
+    ( run
     ) where
 
 import System.Random
@@ -35,8 +35,8 @@ buildInterval pitchClass octave interval = line [firstNote, shortRest, secondNot
         secondNote = transpose interval firstNote
 
 -- Entry Point
-runQuiz :: IO ()
-runQuiz = intervalQuiz
+run :: IO ()
+run = intervalQuiz
 
 -- Types of Quiz
 intervalQuiz :: IO ()
