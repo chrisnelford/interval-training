@@ -27,15 +27,18 @@ randomInterval = do
     interval <- getRandomR (1, 12)
     return (basePitchClass, baseOctave, interval)
 
-runQuiz :: IO ()
-runQuiz = intervalQuiz
-
+-- Contructing musical objects
 buildInterval :: PitchClass -> Octave -> Int -> Music Pitch
 buildInterval pitchClass octave interval = line [firstNote, shortRest, secondNote]
   where firstNote = note (1/4) (pitchClass, octave)
         shortRest = rest (1/8)
         secondNote = transpose interval firstNote
 
+-- Entry Point
+runQuiz :: IO ()
+runQuiz = intervalQuiz
+
+-- Types of Quiz
 intervalQuiz :: IO ()
 intervalQuiz = do
     (pitchClass, octave, interval) <- evalRandIO randomInterval
