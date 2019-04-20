@@ -21,16 +21,16 @@ randomPitch = do
     octave <- randomOctave
     return (pitchClass, octave)
 
-randomInterval :: RandomGen g => Rand g (PitchClass, Octave, Int)
+randomInterval :: RandomGen g => Rand g (Pitch, Int)
 randomInterval = do
-    (basePitchClass, baseOctave) <- randomPitch
+    basePitch <- randomPitch
     interval <- getRandomR (1, 12)
-    return (basePitchClass, baseOctave, interval)
+    return (basePitch, interval)
 
 -- Contructing musical objects
-buildInterval :: PitchClass -> Octave -> Int -> Music Pitch
-buildInterval pitchClass octave interval = line [firstNote, shortRest, secondNote]
-  where firstNote = note (1/4) (pitchClass, octave)
+buildInterval :: Pitch -> Int -> Music Pitch
+buildInterval pitch interval = line [firstNote, shortRest, secondNote]
+  where firstNote = note (1/4) pitch
         shortRest = rest (1/8)
         secondNote = transpose interval firstNote
 
@@ -70,9 +70,9 @@ data Quiz = Quiz { music :: Music Pitch
 
 intervalQuiz :: IO Quiz
 intervalQuiz = do
-    (pitchClass, octave, interval) <- evalRandIO randomInterval
+    (pitch, interval) <- evalRandIO randomInterval
     return $ Quiz {
-        music       = (buildInterval pitchClass octave interval),
+        music       = (buildInterval pitch interval),
         prompt      = "How many semitones?",
         test        = (== interval) . read,
         successText = correct,
