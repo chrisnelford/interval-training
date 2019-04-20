@@ -37,17 +37,16 @@ buildInterval pitchClass octave interval = line [firstNote, shortRest, secondNot
 buildTone :: Pitch -> Music Pitch
 buildTone = note 1
 
+-- Utilites for building test functions
+samePitchClass :: PitchClass -> PitchClass -> Bool
+samePitchClass pc1 pc2 = absPitch (pc1, 0) == absPitch (pc2, 0)
+
 -- Entry Point
 run :: IO ()
 run = do
     quiz <- intervalQuiz
     runQuiz quiz
 
-data Quiz = Quiz { music :: Music Pitch
-                 , prompt :: String
-                 , test :: (String -> Bool)
-                 , successText :: String
-                 , failureText :: String }
 
 runQuiz :: Quiz -> IO ()
 runQuiz quiz = do
@@ -58,12 +57,16 @@ runQuiz quiz = do
                then successText quiz
                else failureText quiz
 
--- Types of Quiz
+-- Utilites for building messages for users.
 correct :: String
 correct = "Correct!"
 
-samePitchClass :: PitchClass -> PitchClass -> Bool
-samePitchClass pc1 pc2 = absPitch (pc1, 0) == absPitch (pc2, 0)
+-- Types of Quiz
+data Quiz = Quiz { music :: Music Pitch
+                 , prompt :: String
+                 , test :: (String -> Bool)
+                 , successText :: String
+                 , failureText :: String }
 
 intervalQuiz :: IO Quiz
 intervalQuiz = do
