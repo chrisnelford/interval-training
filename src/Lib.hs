@@ -38,12 +38,12 @@ buildInterval pitchClass octave interval = line [firstNote, shortRest, secondNot
 run :: IO ()
 run = intervalQuiz
 
-runQuiz :: Music Pitch -> String -> (String -> String) -> IO ()
-runQuiz music prompt test = do
+runQuiz :: Music Pitch -> String -> (String -> Bool) -> String -> String -> IO ()
+runQuiz music prompt test successString failureString = do
     play music
     putStrLn prompt
     answer <- getLine
-    putStrLn $ test answer
+    putStrLn $ if test answer then successString else failureString
 
 -- Types of Quiz
 intervalQuiz :: IO ()
@@ -51,13 +51,17 @@ intervalQuiz = do
     (pitchClass, octave, interval) <- evalRandIO randomInterval
     let music = buildInterval pitchClass octave interval
     let prompt = "How many semitones?"
-    let test = \x -> if (read x) == interval then "Correct" else "Wrong: that was " ++ show interval ++ " semitones."
-    runQuiz music prompt test
+    let test = \x -> (read x) == interval
+    let successString = "Correct"
+    let failureString = "Wrong: that was " ++ show interval ++ " semitones."
+    runQuiz music prompt test successString failureString
 
 singleToneQuiz :: IO ()
 singleToneQuiz = do
     (pitch, octave) <- evalRandIO randomPitch
     let music = note 1 (pitch, octave)
     let prompt = "What note did you hear?"
-    let test = \x -> if (absPitch (read x, octave) == absPitch (pitch, octave)) then "Correct" else "WrongL that was a " ++ show pitch ++ "."
-    runQuiz music prompt test
+    let test = \x -> (absPitch (read x, octave) == absPitch (pitch, octave))
+    let successString = "Correct"
+    let failureString = "Wrong: that was a " ++ show pitch ++ "."
+    runQuiz music prompt test successString failureString
