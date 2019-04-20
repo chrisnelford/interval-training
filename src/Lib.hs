@@ -45,15 +45,17 @@ samePitchClass pc1 pc2 = absPitch (pc1, 0) == absPitch (pc2, 0)
 run :: IO ()
 run = runRandomQuiz intervalQuiz
 
-runRandomQuiz :: Rand StdGen Quiz -> IO ()
-runRandomQuiz randomQuiz = do
-    quiz <- evalRandIO randomQuiz
+runQuiz :: Quiz -> IO()
+runQuiz quiz = do
     play $ music quiz
     putStrLn $ prompt quiz
     answer <- getLine
     putStrLn $ if (test quiz) answer
                then successText quiz
                else failureText quiz
+
+runRandomQuiz :: Rand StdGen Quiz -> IO ()
+runRandomQuiz = evalRandIO >=> runQuiz
 
 -- Utilites for building messages for users.
 correct :: String
