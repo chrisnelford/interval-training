@@ -72,20 +72,20 @@ intervalQuiz :: IO Quiz
 intervalQuiz = do
     (pitch, interval) <- evalRandIO randomInterval
     return $ Quiz {
-        music       = (buildInterval pitch interval),
+        music       = buildInterval pitch interval,
         prompt      = "How many semitones?",
         test        = (== interval) . read,
         successText = correct,
-        failureText = ("Wrong: that was " ++ show interval ++ " semitones.")
+        failureText = "Wrong: that was " ++ show interval ++ " semitones."
         }
 
 singleToneQuiz :: IO Quiz
 singleToneQuiz = do
     (pitchClass, octave) <- evalRandIO randomPitch
     return $ Quiz {
-        music       = (buildTone (pitchClass, octave)),
+        music       = buildTone (pitchClass, octave),
         prompt      = "What note did you hear?",
         test        = (samePitchClass pitchClass) . read,
         successText = correct,
-        failureText = ("Wrong: that was a " ++ show pitchClass ++ ".")
+        failureText = "Wrong: that was a " ++ show pitchClass ++ "."
         }
