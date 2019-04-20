@@ -43,13 +43,11 @@ samePitchClass pc1 pc2 = absPitch (pc1, 0) == absPitch (pc2, 0)
 
 -- Entry Point
 run :: IO ()
-run = do
-    quiz <- intervalQuiz
-    runQuiz quiz
+run = runRandomQuiz intervalQuiz
 
-
-runQuiz :: Quiz -> IO ()
-runQuiz quiz = do
+runRandomQuiz :: Rand StdGen Quiz -> IO ()
+runRandomQuiz randomQuiz = do
+    quiz <- evalRandIO randomQuiz
     play $ music quiz
     putStrLn $ prompt quiz
     answer <- getLine
@@ -68,9 +66,9 @@ data Quiz = Quiz { music :: Music Pitch
                  , successText :: String
                  , failureText :: String }
 
-intervalQuiz :: IO Quiz
+intervalQuiz :: RandomGen g => Rand g Quiz
 intervalQuiz = do
-    (pitch, interval) <- evalRandIO randomInterval
+    (pitch, interval) <- randomInterval
     return $ Quiz {
         music       = buildInterval pitch interval,
         prompt      = "How many semitones?",
@@ -79,9 +77,9 @@ intervalQuiz = do
         failureText = "Wrong: that was " ++ show interval ++ " semitones."
         }
 
-singleToneQuiz :: IO Quiz
+singleToneQuiz :: RandomGen g => Rand g Quiz
 singleToneQuiz = do
-    (pitchClass, octave) <- evalRandIO randomPitch
+    (pitchClass, octave) <- randomPitch
     return $ Quiz {
         music       = buildTone (pitchClass, octave),
         prompt      = "What note did you hear?",
