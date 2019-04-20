@@ -34,34 +34,55 @@ buildInterval pitchClass octave interval = line [firstNote, shortRest, secondNot
         shortRest = rest (1/8)
         secondNote = transpose interval firstNote
 
+buildTone :: Pitch -> Music Pitch
+buildTone = note 1
+
 -- Entry Point
 run :: IO ()
-run = intervalQuiz
+run = do
+    quiz <- intervalQuiz
+    runQuiz quiz
 
-runQuiz :: Music Pitch -> String -> (String -> Bool) -> String -> String -> IO ()
-runQuiz music prompt test successString failureString = do
-    play music
-    putStrLn prompt
+data Quiz = Quiz { music :: Music Pitch
+                 , prompt :: String
+                 , test :: (String -> Bool)
+                 , successText :: String
+                 , failureText :: String }
+
+runQuiz :: Quiz -> IO ()
+runQuiz quiz = do
+    play $ music quiz
+    putStrLn $ prompt quiz
     answer <- getLine
-    putStrLn $ if test answer then successString else failureString
+    putStrLn $ if (test quiz) answer
+               then successText quiz
+               else failureText quiz
 
 -- Types of Quiz
-intervalQuiz :: IO ()
+correct :: String
+correct = "Correct!"
+
+samePitchClass :: PitchClass -> PitchClass -> Bool
+samePitchClass pc1 pc2 = absPitch (pc1, 0) == absPitch (pc2, 0)
+
+intervalQuiz :: IO Quiz
 intervalQuiz = do
     (pitchClass, octave, interval) <- evalRandIO randomInterval
-    let music = buildInterval pitchClass octave interval
-    let prompt = "How many semitones?"
-    let test = \x -> (read x) == interval
-    let successString = "Correct"
-    let failureString = "Wrong: that was " ++ show interval ++ " semitones."
-    runQuiz music prompt test successString failureString
+    return $ Quiz {
+        music       = (buildInterval pitchClass octave interval),
+        prompt      = "How many semitones?",
+        test        = (== interval) . read,
+        successText = correct,
+        failureText = ("Wrong: that was " ++ show interval ++ " semitones.")
+        }
 
-singleToneQuiz :: IO ()
+singleToneQuiz :: IO Quiz
 singleToneQuiz = do
-    (pitch, octave) <- evalRandIO randomPitch
-    let music = note 1 (pitch, octave)
-    let prompt = "What note did you hear?"
-    let test = \x -> (absPitch (read x, octave) == absPitch (pitch, octave))
-    let successString = "Correct"
-    let failureString = "Wrong: that was a " ++ show pitch ++ "."
-    runQuiz music prompt test successString failureString
+    (pitchClass, octave) <- evalRandIO randomPitch
+    return $ Quiz {
+        music       = (buildTone (pitchClass, octave)),
+        prompt      = "What note did you hear?",
+        test        = (samePitchClass pitchClass) . read,
+        successText = correct,
+        failureText = ("Wrong: that was a " ++ show pitchClass ++ ".")
+        }
