@@ -26,6 +26,7 @@ instance Random PitchClass where
               weighted = map (\x -> (x, 1))
     random = randomR (minBound, maxBound)
 
+-- On a piano, 0 is the lowest octave, and 8 is the highest.
 randomOctave :: RandomGen g => Rand g Octave
 randomOctave = getRandomR (0, 8)
 
@@ -35,6 +36,8 @@ randomPitch = do
     octave <- randomOctave
     return (pitchClass, octave)
 
+-- There are 12 semitones in a whole octave, so a number between
+-- 1 and 12 with give any possible ascending interval.
 randomInterval :: RandomGen g => Rand g (Pitch, Int)
 randomInterval = do
     basePitch <- randomPitch
