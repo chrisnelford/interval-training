@@ -3,46 +3,13 @@ module Lib
     ) where
 
 import Control.Monad
-import System.Random
 import Text.Printf
 
 import Control.Monad.Random
 import Euterpea
 
--- Randomness for Euterpea note-level contstructs
-instance Random PitchClass where
-    randomR (lower, upper) g = (toEnum randomInt, g')
-        where (randomInt, g') = randomR (fromEnum lower, fromEnum upper) g
-    random = randomR (minBound, maxBound)
-
-randomOctave :: RandomGen g => Rand g Octave
-randomOctave = getRandomR (0, 8)
-
-randomPitch :: RandomGen g => Rand g Pitch
-randomPitch = do
-    pitchClass <- getRandom
-    octave <- randomOctave
-    return (pitchClass, octave)
-
-randomInterval :: RandomGen g => Rand g (Pitch, Int)
-randomInterval = do
-    basePitch <- randomPitch
-    interval <- getRandomR (1, 12)
-    return (basePitch, interval)
-
--- Contructing musical objects
-buildInterval :: Pitch -> Int -> Music Pitch
-buildInterval pitch interval = line [firstNote, shortRest, secondNote]
-  where firstNote = note (1/4) pitch
-        shortRest = rest (1/8)
-        secondNote = transpose interval firstNote
-
-buildTone :: Pitch -> Music Pitch
-buildTone = note 1
-
--- Utilites for building test functions
-samePitchClass :: PitchClass -> PitchClass -> Bool
-samePitchClass pc1 pc2 = absPitch (pc1, 0) == absPitch (pc2, 0)
+import Random
+import Result
 
 -- Entry Point
 run :: IO ()
@@ -65,47 +32,6 @@ runQuiz = evaluate >=> display
 
 runRandomQuiz :: Rand StdGen Quiz -> IO ()
 runRandomQuiz = evalRandIO >=> runQuiz
-
--- Utilites for interacting with users.
-correct :: String
-correct = "Correct!"
-
-formatSimplePercent :: Double -> String
-formatSimplePercent = printf "%.0g%%"
-
-resultSummary :: Result -> String
-resultSummary res = let successStr = show $ successes res
-                        questionStr | successes res == 1 = "question"
-                                    | otherwise          = "questions"
-                        totalStr = show $ total res
-                        percentStr = formatSimplePercent $ successPercent res
-                    in mconcat ["You answered ", successStr, " ",
-                                 questionStr, " correctly out of a total of ",
-                                 totalStr, ".\n",
-                                 "That's ", percentStr, "."]
-
--- Tracking score
-data Result = Result { successes :: Int
-                     , failures :: Int }
-
-instance Semigroup Result where
-    (<>) (Result s1 f1) (Result s2 f2) = Result (s1 + s2) (f1 + f2)
-
-instance Monoid Result where
-    mempty = Result { successes = 0, failures = 0 }
-
-success, failure :: Result
-success = Result { successes = 1, failures = 0 }
-failure = Result { successes = 0, failures = 1 }
-
-total :: Result -> Int
-total (Result s f) = s + f
-
-successRatio :: Result -> Double
-successRatio res = (fromIntegral $ successes res) / (fromIntegral $ total res)
-
-successPercent :: Result -> Double
-successPercent = (100 *) . successRatio
 
 -- Types of Quiz
 data Question = Question { music :: Music Pitch
@@ -140,3 +66,36 @@ singleToneQuestion = do
         successText = correct,
         failureText = "Wrong: that was a " ++ show pitchClass ++ "."
         }
+
+-- Utilites for contructing musical objects
+buildInterval :: Pitch -> Int -> Music Pitch
+buildInterval pitch interval = line [firstNote, shortRest, secondNote]
+  where firstNote = note (1/4) pitch
+        shortRest = rest (1/8)
+        secondNote = transpose interval firstNote
+
+buildTone :: Pitch -> Music Pitch
+buildTone = note 1
+
+-- Utilites for building test functions
+samePitchClass :: PitchClass -> PitchClass -> Bool
+samePitchClass pc1 pc2 = absPitch (pc1, 0) == absPitch (pc2, 0)
+
+
+-- Utilites for interacting with users.
+correct :: String
+correct = "Correct!"
+
+formatSimplePercent :: Double -> String
+formatSimplePercent = printf "%.0g%%"
+
+resultSummary :: Result -> String
+resultSummary res = let successStr = show $ successes res
+                        questionStr | successes res == 1 = "question"
+                                    | otherwise          = "questions"
+                        totalStr = show $ total res
+                        percentStr = formatSimplePercent $ successPercent res
+                    in mconcat ["You answered ", successStr, " ",
+                                 questionStr, " correctly out of a total of ",
+                                 totalStr, ".\n",
+                                 "That's ", percentStr, "."]
