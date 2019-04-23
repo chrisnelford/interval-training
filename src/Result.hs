@@ -6,6 +6,7 @@ module Result
     , successPercent
     ) where
 
+-- Keeping track of score as a quiz runs.
 data Result = Result { successes :: Int
                      , failures :: Int }
 
