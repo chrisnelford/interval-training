@@ -2,11 +2,12 @@ module Lib
     ( run
     ) where
 
-import System.Random
-import Euterpea
 import Control.Monad
-import Control.Monad.Random
+import System.Random
 import Text.Printf
+
+import Control.Monad.Random
+import Euterpea
 
 -- Randomness for Euterpea note-level contstructs
 instance Random PitchClass where
