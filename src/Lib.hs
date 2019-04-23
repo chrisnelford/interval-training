@@ -44,44 +44,43 @@ samePitchClass pc1 pc2 = absPitch (pc1, 0) == absPitch (pc2, 0)
 
 -- Entry Point
 run :: IO ()
-run = runMultiPartRandomQuiz multiPartQuiz
+run = runRandomQuiz quiz
+
+askQuestion :: Question -> IO()
+askQuestion q = do
+    play $ music q
+    putStrLn $ prompt q
+    answer <- getLine
+    putStrLn $ if (test q) answer
+               then successText q
+               else failureText q
 
 runQuiz :: Quiz -> IO()
-runQuiz quiz = do
-    play $ music quiz
-    putStrLn $ prompt quiz
-    answer <- getLine
-    putStrLn $ if (test quiz) answer
-               then successText quiz
-               else failureText quiz
-
-runMultiPartQuiz :: [Quiz] -> IO()
-runMultiPartQuiz = sequence_ . (map runQuiz)
+runQuiz = sequence_ . (map askQuestion)
 
 runRandomQuiz :: Rand StdGen Quiz -> IO ()
 runRandomQuiz = evalRandIO >=> runQuiz
-
-runMultiPartRandomQuiz :: Rand StdGen [Quiz] -> IO ()
-runMultiPartRandomQuiz = evalRandIO >=> runMultiPartQuiz
 
 -- Utilites for building messages for users.
 correct :: String
 correct = "Correct!"
 
 -- Types of Quiz
-data Quiz = Quiz { music :: Music Pitch
-                 , prompt :: String
-                 , test :: (String -> Bool)
-                 , successText :: String
-                 , failureText :: String }
+data Question = Question { music :: Music Pitch
+                         , prompt :: String
+                         , test :: (String -> Bool)
+                         , successText :: String
+                         , failureText :: String }
 
-multiPartQuiz :: RandomGen g => Rand g [Quiz]
-multiPartQuiz = liftM2 (++) (replicateM 3 singleToneQuiz) (replicateM 2 intervalQuiz)
+type Quiz = [Question]
 
-intervalQuiz :: RandomGen g => Rand g Quiz
-intervalQuiz = do
+quiz :: RandomGen g => Rand g Quiz
+quiz = liftM2 (++) (replicateM 3 singleToneQuestion) (replicateM 2 intervalQuestion)
+
+intervalQuestion :: RandomGen g => Rand g Question
+intervalQuestion = do
     (pitch, interval) <- randomInterval
-    return $ Quiz {
+    return $ Question {
         music       = buildInterval pitch interval,
         prompt      = "How many semitones?",
         test        = (== interval) . read,
@@ -89,10 +88,10 @@ intervalQuiz = do
         failureText = "Wrong: that was " ++ show interval ++ " semitones."
         }
 
-singleToneQuiz :: RandomGen g => Rand g Quiz
-singleToneQuiz = do
+singleToneQuestion :: RandomGen g => Rand g Question
+singleToneQuestion = do
     (pitchClass, octave) <- randomPitch
-    return $ Quiz {
+    return $ Question {
         music       = buildTone (pitchClass, octave),
         prompt      = "What note did you hear?",
         test        = (samePitchClass pitchClass) . read,
