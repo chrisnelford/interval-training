@@ -44,27 +44,41 @@ samePitchClass pc1 pc2 = absPitch (pc1, 0) == absPitch (pc2, 0)
 
 -- Entry Point
 run :: IO ()
-run = runRandomQuiz quiz
+run = void $ runRandomQuiz quiz
 
-askQuestion :: Question -> IO()
+askQuestion :: Question -> IO Result
 askQuestion q = do
     play $ music q
     putStrLn $ prompt q
     answer <- getLine
-    putStrLn $ if (test q) answer
-               then successText q
-               else failureText q
+    let (response, result) | (test q) answer = (successText q, success)
+                           | otherwise       = (failureText q, failure)
+    putStrLn response
+    return result
 
-runQuiz :: Quiz -> IO()
-runQuiz = sequence_ . (map askQuestion)
+runQuiz :: Quiz -> IO Result
+runQuiz = (fmap mconcat) . sequence . (map askQuestion)
 
-runRandomQuiz :: Rand StdGen Quiz -> IO ()
+runRandomQuiz :: Rand StdGen Quiz -> IO Result
 runRandomQuiz = evalRandIO >=> runQuiz
 
 -- Utilites for building messages for users.
 correct :: String
 correct = "Correct!"
 
+-- Tracking score
+data Result = Result { successes :: Int
+                     , failures :: Int }
+
+instance Semigroup Result where
+    (<>) (Result s1 f1) (Result s2 f2) = Result (s1 + s2) (f1 + f2)
+
+instance Monoid Result where
+    mempty = Result { successes = 0, failures = 0 }
+
+success, failure :: Result
+success = Result { successes = 1, failures = 0 }
+failure = Result { successes = 0, failures = 1 }
 -- Types of Quiz
 data Question = Question { music :: Music Pitch
                          , prompt :: String
