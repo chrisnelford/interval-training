@@ -19,3 +19,5 @@ Add a free software license to the code.
 Add MIDI function to work with my keyboard.
 
 Write better tools for building up quizzes.
+
+Suggest genericizing MonadRandom's `fromList` to other traversables.
