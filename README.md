@@ -19,5 +19,3 @@ Add a free software license to the code.
 Add MIDI function to work with my keyboard.
 
 Write better tools for building up quizzes.
-
-Track the score and tell the user how they did.

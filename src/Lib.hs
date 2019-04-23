@@ -6,6 +6,7 @@ import System.Random
 import Euterpea
 import Control.Monad
 import Control.Monad.Random
+import Text.Printf
 
 -- Randomness for Euterpea note-level contstructs
 instance Random PitchClass where
@@ -56,15 +57,31 @@ askQuestion q = do
     putStrLn response
     return result
 
-runQuiz :: Quiz -> IO Result
-runQuiz = (fmap mconcat) . sequence . (map askQuestion)
+runQuiz :: Quiz -> IO ()
+runQuiz = evaluate >=> display
+    where evaluate = (fmap mconcat) . sequence . (map askQuestion)
+          display = putStrLn . resultSummary
 
-runRandomQuiz :: Rand StdGen Quiz -> IO Result
+runRandomQuiz :: Rand StdGen Quiz -> IO ()
 runRandomQuiz = evalRandIO >=> runQuiz
 
--- Utilites for building messages for users.
+-- Utilites for interacting with users.
 correct :: String
 correct = "Correct!"
+
+formatSimplePercent :: Double -> String
+formatSimplePercent = printf "%.0g%%"
+
+resultSummary :: Result -> String
+resultSummary res = let successStr = show $ successes res
+                        questionStr | successes res == 1 = "question"
+                                    | otherwise          = "questions"
+                        totalStr = show $ total res
+                        percentStr = formatSimplePercent $ successPercent res
+                    in mconcat ["You answered ", successStr, " ",
+                                 questionStr, " correctly out of a total of ",
+                                 totalStr, ".\n",
+                                 "That's ", percentStr, "."]
 
 -- Tracking score
 data Result = Result { successes :: Int
@@ -79,6 +96,16 @@ instance Monoid Result where
 success, failure :: Result
 success = Result { successes = 1, failures = 0 }
 failure = Result { successes = 0, failures = 1 }
+
+total :: Result -> Int
+total (Result s f) = s + f
+
+successRatio :: Result -> Double
+successRatio res = (fromIntegral $ successes res) / (fromIntegral $ total res)
+
+successPercent :: Result -> Double
+successPercent = (100 *) . successRatio
+
 -- Types of Quiz
 data Question = Question { music :: Music Pitch
                          , prompt :: String
