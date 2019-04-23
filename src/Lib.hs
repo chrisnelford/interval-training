@@ -5,7 +5,6 @@ module Lib
 import Control.Monad
 import Text.Printf
 
-import Control.Monad.Random
 import Euterpea
 
 import Random

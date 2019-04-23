@@ -2,6 +2,7 @@ module Random
     ( randomOctave
     , randomPitch
     , randomInterval
+    , module Control.Monad.Random
     ) where
 
 import System.Random
