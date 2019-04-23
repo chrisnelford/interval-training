@@ -4,6 +4,7 @@ module Lib
 
 import System.Random
 import Euterpea
+import Control.Monad
 import Control.Monad.Random
 
 -- Randomness for Euterpea note-level contstructs
@@ -43,7 +44,7 @@ samePitchClass pc1 pc2 = absPitch (pc1, 0) == absPitch (pc2, 0)
 
 -- Entry Point
 run :: IO ()
-run = runRandomQuiz intervalQuiz
+run = runMultiPartRandomQuiz multiPartQuiz
 
 runQuiz :: Quiz -> IO()
 runQuiz quiz = do
@@ -54,8 +55,14 @@ runQuiz quiz = do
                then successText quiz
                else failureText quiz
 
+runMultiPartQuiz :: [Quiz] -> IO()
+runMultiPartQuiz = sequence_ . (map runQuiz)
+
 runRandomQuiz :: Rand StdGen Quiz -> IO ()
 runRandomQuiz = evalRandIO >=> runQuiz
+
+runMultiPartRandomQuiz :: Rand StdGen [Quiz] -> IO ()
+runMultiPartRandomQuiz = evalRandIO >=> runMultiPartQuiz
 
 -- Utilites for building messages for users.
 correct :: String
@@ -67,6 +74,9 @@ data Quiz = Quiz { music :: Music Pitch
                  , test :: (String -> Bool)
                  , successText :: String
                  , failureText :: String }
+
+multiPartQuiz :: RandomGen g => Rand g [Quiz]
+multiPartQuiz = liftM2 (++) (replicateM 3 singleToneQuiz) (replicateM 2 intervalQuiz)
 
 intervalQuiz :: RandomGen g => Rand g Quiz
 intervalQuiz = do
