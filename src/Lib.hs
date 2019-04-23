@@ -80,7 +80,6 @@ buildTone = note 1
 samePitchClass :: PitchClass -> PitchClass -> Bool
 samePitchClass pc1 pc2 = absPitch (pc1, 0) == absPitch (pc2, 0)
 
-
 -- Utilites for interacting with users.
 correct :: String
 correct = "Correct!"
