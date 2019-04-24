@@ -25,9 +25,7 @@ askQuestion q = do
     return result
 
 runQuiz :: Quiz -> IO ()
-runQuiz = evaluate >=> display
-    where evaluate = (fmap mconcat) . sequence . (map askQuestion)
-          display = putStrLn . resultSummary
+runQuiz = foldMap askQuestion >=> (putStrLn . resultSummary)
 
 runRandomQuiz :: Rand StdGen Quiz -> IO ()
 runRandomQuiz = evalRandIO >=> runQuiz
