@@ -27,6 +27,10 @@ Debug the unwanted text in stdout:
 > pm_winmm_term called
 > pm_winmm_term exiting
 
+The issue seems to be that [PortMidi](https://github.com/PortMidi/PortMidi/blob/master/PortMidi.cabal) builds its Windows C libraries with `DEBUG` hard-coded
+to `1`. Ideally, it would be possible to disable this as part of configuring the
+Haskell package.
+
 Add more quizzes:
 
 * Both ascending and descending intervals
