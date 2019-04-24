@@ -12,7 +12,9 @@ import Result
 
 -- Entry Point
 run :: IO ()
-run = void $ runRandomQuiz quiz
+run = do
+    result <- runRandomQuiz quiz
+    putStrLn $ resultSummary result
 
 askQuestion :: Question -> IO Result
 askQuestion q = do
@@ -24,10 +26,10 @@ askQuestion q = do
     putStrLn response
     return result
 
-runQuiz :: Quiz -> IO ()
-runQuiz = foldMap askQuestion >=> (putStrLn . resultSummary)
+runQuiz :: Quiz -> IO Result
+runQuiz = foldMap askQuestion
 
-runRandomQuiz :: Rand StdGen Quiz -> IO ()
+runRandomQuiz :: Rand StdGen Quiz -> IO Result
 runRandomQuiz = evalRandIO >=> runQuiz
 
 -- Types of Quiz
