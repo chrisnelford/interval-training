@@ -21,3 +21,14 @@ Add MIDI function to work with my keyboard.
 Write better tools for building up quizzes.
 
 Suggest genericizing MonadRandom's `fromList` to other traversables.
+
+Debug the unwanted text in stdout:
+
+> pm_winmm_term called
+> pm_winmm_term exiting
+
+Add more quizzes:
+
+* Both ascending and descending intervals
+* Identify chords
+* Quizzes that keep asking the same type of question until you get enough right
