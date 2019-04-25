@@ -26,11 +26,25 @@ askQuestion q = do
     putStrLn response
     return result
 
-runQuiz :: Quiz -> IO Result
-runQuiz = foldMap askQuestion
+step :: Question -> IO (Result, Quiz)
+step q = do
+    result <- askQuestion q
+    let extra | failures result >= 1 = [q]
+              | otherwise            = []
+    return (result, extra)
+
+runQuizStepped :: Quiz -> IO Result
+runQuizStepped [] = return mempty
+runQuizStepped (q:qs) = do
+    (result, extra) <- step q
+    (return result) <> (runQuizStepped (extra ++ qs))
+
+-- Previously ran quizzes with a simple foldMap
+-- runQuiz :: Quiz -> IO Result
+-- runQuiz = foldMap askQuestion
 
 runRandomQuiz :: Rand StdGen Quiz -> IO Result
-runRandomQuiz = evalRandIO >=> runQuiz
+runRandomQuiz = evalRandIO >=> runQuizStepped
 
 -- Types of Quiz
 data Question = Question { music :: Music Pitch
