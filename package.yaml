@@ -24,6 +24,7 @@ dependencies:
 - random
 - Euterpea
 - MonadRandom
+- mtl
 
 library:
   source-dirs: src

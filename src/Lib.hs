@@ -3,6 +3,7 @@ module Lib
     ) where
 
 import Control.Monad
+import Control.Monad.State
 import Text.Printf
 
 import Euterpea
@@ -16,35 +17,34 @@ run = do
     result <- runRandomQuiz quiz
     putStrLn $ resultSummary result
 
-askQuestion :: Question -> IO Result
+type QuizContext = StateT Quiz IO
+
+askQuestion :: Question -> QuizContext Result
 askQuestion q = do
-    play $ music q
-    putStrLn $ prompt q
-    answer <- getLine
+    lift $ play $ music q
+    lift $ putStrLn $ prompt q
+    answer <- lift $ getLine
     let (response, result) | (test q) answer = (successText q, success)
                            | otherwise       = (failureText q, failure)
-    putStrLn response
+    lift $ putStrLn response
     return result
 
-step :: Question -> IO (Result, Quiz)
-step q = do
-    result <- askQuestion q
-    let extra | failures result >= 1 = [q]
-              | otherwise            = []
-    return (result, extra)
+pop :: QuizContext (Maybe Question)
+pop = do
+    quiz <- get
+    let (question, new) = case quiz of [] -> (Nothing, [])
+                                       (x:xs) -> (Just x, xs)
+    put new
+    return question
 
-runQuizStepped :: Quiz -> IO Result
-runQuizStepped [] = return mempty
-runQuizStepped (q:qs) = do
-    (result, extra) <- step q
-    (return result) <> (runQuizStepped (extra ++ qs))
-
--- Previously ran quizzes with a simple foldMap
--- runQuiz :: Quiz -> IO Result
--- runQuiz = foldMap askQuestion
+runQuiz :: QuizContext Result
+runQuiz = do
+    question <- pop
+    case question of Nothing -> return mempty
+                     Just q  -> liftM2 (<>) (askQuestion q) runQuiz
 
 runRandomQuiz :: Rand StdGen Quiz -> IO Result
-runRandomQuiz = evalRandIO >=> runQuizStepped
+runRandomQuiz = evalRandIO >=> evalStateT runQuiz
 
 -- Types of Quiz
 data Question = Question { music :: Music Pitch
