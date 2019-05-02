@@ -27,10 +27,10 @@ instance Random PitchClass where
     random = randomR (minBound, maxBound)
 
 -- On a piano, 0 is the lowest octave, and 8 is the highest.
-randomOctave :: RandomGen g => Rand g Octave
+randomOctave :: MonadRandom m => m Octave
 randomOctave = getRandomR (0, 8)
 
-randomPitch :: RandomGen g => Rand g Pitch
+randomPitch :: MonadRandom m => m Pitch
 randomPitch = do
     pitchClass <- getRandom
     octave <- randomOctave
@@ -38,7 +38,7 @@ randomPitch = do
 
 -- There are 12 semitones in a whole octave, so a number between
 -- 1 and 12 with give any possible ascending interval.
-randomInterval :: RandomGen g => Rand g (Pitch, Int)
+randomInterval :: MonadRandom m => m (Pitch, Int)
 randomInterval = do
     basePitch <- randomPitch
     interval <- getRandomR (1, 12)

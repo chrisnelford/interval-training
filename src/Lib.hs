@@ -4,6 +4,8 @@ module Lib
 
 import Control.Monad
 import Control.Monad.State
+import Data.List (uncons)
+import Data.Foldable (toList)  -- Needed because Quiz is a list
 import Text.Printf
 
 import Euterpea
@@ -14,51 +16,68 @@ import Result
 -- Entry Point
 run :: IO ()
 run = do
-    result <- runRandomQuiz quiz
+    result <- runQuiz myQuiz
     putStrLn $ resultSummary result
 
-type QuizContext = StateT Quiz IO
+myQuiz :: Quiz
+myQuiz = buildQuiz (replicate 3 singleToneQuestion ++ replicate 2 intervalQuestion)
 
-askQuestion :: Question -> QuizContext Result
+newtype QuizApp a = QuizApp (RandT StdGen (StateT RemainingQns IO) a)
+  deriving (Functor, Applicative, Monad, MonadRandom, MonadState RemainingQns, MonadIO)
+
+type Quiz = QuizApp ()
+
+buildQuiz :: (MonadState RemainingQns m, Traversable t) => t (m Question) -> m ()
+buildQuiz = sequence >=> put . toList
+
+runQuiz :: Quiz -> IO Result
+runQuiz quiz = runQuizApp (quiz >> askQuestions)
+
+runQuizApp :: QuizApp a -> IO a
+runQuizApp (QuizApp app) = getStdGen >>= (flip evalStateT) [] . evalRandT app
+
+askQuestions :: QuizApp Result
+askQuestions = do
+    question <- pickQuestion
+    case question of Nothing -> return mempty
+                     Just q  -> liftM2 (<>) (liftIO $ askQuestion q) askQuestions
+
+askQuestion :: Question -> IO Result
 askQuestion q = do
-    lift $ play $ music q
-    lift $ putStrLn $ prompt q
-    answer <- lift $ getLine
+    play $ music q
+    putStrLn $ prompt q
+    answer <- getLine
     let (response, result) | (test q) answer = (successText q, success)
                            | otherwise       = (failureText q, failure)
-    lift $ putStrLn response
+    putStrLn response
     return result
 
-pop :: QuizContext (Maybe Question)
-pop = do
-    quiz <- get
-    let (question, new) = case quiz of [] -> (Nothing, [])
-                                       (x:xs) -> (Just x, xs)
-    put new
-    return question
+-- Ways of mutating quizzes
+-- Pick a "random" question by always returning the first one. We can do
+-- better later.
+pickQuestion :: (MonadRandom m, MonadState RemainingQns m) => m (Maybe Question)
+pickQuestion = do
+    currentQuiz <- get
+    case uncons currentQuiz of
+        Nothing -> return Nothing
+        Just (question, rest) -> do
+            put rest
+            return $ Just question
 
-runQuiz :: QuizContext Result
-runQuiz = do
-    question <- pop
-    case question of Nothing -> return mempty
-                     Just q  -> liftM2 (<>) (askQuestion q) runQuiz
+putQuestion :: MonadState RemainingQns m => Question -> m ()
+putQuestion q = modify (q:)
 
-runRandomQuiz :: Rand StdGen Quiz -> IO Result
-runRandomQuiz = evalRandIO >=> evalStateT runQuiz
-
--- Types of Quiz
+-- Data structures representing questions.
 data Question = Question { music :: Music Pitch
                          , prompt :: String
                          , test :: (String -> Bool)
                          , successText :: String
                          , failureText :: String }
 
-type Quiz = [Question]
+type RemainingQns = [Question]
 
-quiz :: RandomGen g => Rand g Quiz
-quiz = liftM2 (++) (replicateM 3 singleToneQuestion) (replicateM 2 intervalQuestion)
-
-intervalQuestion :: RandomGen g => Rand g Question
+-- Types of Question
+intervalQuestion :: MonadRandom m => m Question
 intervalQuestion = do
     (pitch, interval) <- randomInterval
     return $ Question {
@@ -69,7 +88,7 @@ intervalQuestion = do
         failureText = "Wrong: that was " ++ show interval ++ " semitones."
         }
 
-singleToneQuestion :: RandomGen g => Rand g Question
+singleToneQuestion :: MonadRandom m => m Question
 singleToneQuestion = do
     (pitchClass, octave) <- randomPitch
     return $ Question {
