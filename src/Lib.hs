@@ -52,7 +52,7 @@ askQuestion q = do
     putStrLn response
     return result
 
--- Ways of mutating quizzes
+-- Ways of mutating the set of remaining questions.
 -- Pick a "random" question by always returning the first one. We can do
 -- better later.
 pickQuestion :: (MonadRandom m, MonadState RemainingQns m) => m (Maybe Question)
