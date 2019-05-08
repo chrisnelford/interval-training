@@ -38,7 +38,7 @@ runQuizApp (QuizApp app) = getStdGen >>= (flip evalStateT) [] . evalRandT app
 
 askQuestions :: QuizApp Result
 askQuestions = do
-    question <- pickQuestion
+    question <- pickRandomQuestion
     case question of Nothing -> return mempty
                      Just q  -> liftM2 (<>) (liftIO $ askQuestion q) askQuestions
 
@@ -53,12 +53,28 @@ askQuestion q = do
     return result
 
 -- Ways of mutating the set of remaining questions.
--- Pick a "random" question by always returning the first one. We can do
--- better later.
-pickQuestion :: (MonadRandom m, MonadState RemainingQns m) => m (Maybe Question)
-pickQuestion = do
+pickRandomQuestion :: (MonadRandom m, MonadState RemainingQns m) => m (Maybe Question)
+pickRandomQuestion = do
     currentQuiz <- get
-    case uncons currentQuiz of
+    choice <- unconsRandom currentQuiz
+    case choice of
+        Nothing -> return Nothing
+        Just (question, rest) -> do
+            put rest
+            return $ Just question
+
+unconsRandom :: (MonadRandom m) => [a] -> m (Maybe (a, [a]))
+unconsRandom [] = return Nothing
+unconsRandom xs = do
+    index <- getRandomR (0, (length xs) - 1)
+    let (start, rest) = splitAt index xs
+    return $ Just (head rest, start ++ tail rest)
+
+pickNextQuestion :: (MonadState RemainingQns m) => m (Maybe Question)
+pickNextQuestion = do
+    currentQuiz <- get
+    choice <- (return . uncons) currentQuiz
+    case choice of
         Nothing -> return Nothing
         Just (question, rest) -> do
             put rest
