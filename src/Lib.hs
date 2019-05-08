@@ -36,6 +36,7 @@ runQuiz quiz = runQuizApp (quiz >> askQuestions)
 runQuizApp :: QuizApp a -> IO a
 runQuizApp (QuizApp app) = getStdGen >>= (flip evalStateT) [] . evalRandT app
 
+-- Asking questions to the user.
 askQuestions :: QuizApp Result
 askQuestions = do
     question <- pickRandomQuestion
