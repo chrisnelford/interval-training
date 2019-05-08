@@ -54,32 +54,25 @@ askQuestion q = do
     return result
 
 -- Ways of mutating the set of remaining questions.
+-- TODO: Find a way to use more general list picking functions but still keep the
+--       return type bound to `Question`.
+pickQuestionWith :: (MonadRandom m, MonadState RemainingQns m) => ([Question] -> m (Maybe (Question, [Question]))) -> m (Maybe Question)
+pickQuestionWith f = do
+    currentQuiz <- get
+    choice <- f currentQuiz
+    case choice of
+        Nothing -> return Nothing
+        Just (question, rest) -> do
+            put rest
+            return $ Just question
+
+-- TODO: Find a way to relax the `MonadRandom m` constraint as it's not needed
+--       to pick a question without any randomness.
+pickNextQuestion :: (MonadRandom m, MonadState RemainingQns m) => m (Maybe Question)
+pickNextQuestion = pickQuestionWith (return . uncons)
+
 pickRandomQuestion :: (MonadRandom m, MonadState RemainingQns m) => m (Maybe Question)
-pickRandomQuestion = do
-    currentQuiz <- get
-    choice <- unconsRandom currentQuiz
-    case choice of
-        Nothing -> return Nothing
-        Just (question, rest) -> do
-            put rest
-            return $ Just question
-
-unconsRandom :: (MonadRandom m) => [a] -> m (Maybe (a, [a]))
-unconsRandom [] = return Nothing
-unconsRandom xs = do
-    index <- getRandomR (0, (length xs) - 1)
-    let (start, rest) = splitAt index xs
-    return $ Just (head rest, start ++ tail rest)
-
-pickNextQuestion :: (MonadState RemainingQns m) => m (Maybe Question)
-pickNextQuestion = do
-    currentQuiz <- get
-    choice <- (return . uncons) currentQuiz
-    case choice of
-        Nothing -> return Nothing
-        Just (question, rest) -> do
-            put rest
-            return $ Just question
+pickRandomQuestion = pickQuestionWith unconsRandom
 
 putQuestion :: MonadState RemainingQns m => Question -> m ()
 putQuestion q = modify (q:)

@@ -2,6 +2,7 @@ module Random
     ( randomOctave
     , randomPitch
     , randomInterval
+    , unconsRandom
     , module Control.Monad.Random
     ) where
 
@@ -43,3 +44,10 @@ randomInterval = do
     basePitch <- randomPitch
     interval <- getRandomR (1, 12)
     return (basePitch, interval)
+
+unconsRandom :: (MonadRandom m) => [a] -> m (Maybe (a, [a]))
+unconsRandom [] = return Nothing
+unconsRandom xs = do
+    index <- getRandomR (0, (length xs) - 1)
+    let (start, rest) = splitAt index xs
+    return $ Just (head rest, start ++ tail rest)
