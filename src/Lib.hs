@@ -10,6 +10,7 @@ import Text.Printf
 
 import Euterpea
 
+import Deck (Deck, fromFoldable, insert, drawFrom, randomLocation)
 import Random
 import Result
 
@@ -22,24 +23,24 @@ run = do
 myQuiz :: Quiz
 myQuiz = buildQuiz (replicate 3 singleToneQuestion ++ replicate 2 intervalQuestion)
 
-newtype QuizApp a = QuizApp (RandT StdGen (StateT RemainingQns IO) a)
-  deriving (Functor, Applicative, Monad, MonadRandom, MonadState RemainingQns, MonadIO)
+newtype QuizApp a = QuizApp (RandT StdGen (StateT (Deck Question) IO) a)
+  deriving (Functor, Applicative, Monad, MonadRandom, MonadState (Deck Question), MonadIO)
 
 type Quiz = QuizApp ()
 
-buildQuiz :: (MonadState RemainingQns m, Traversable t) => t (m Question) -> m ()
-buildQuiz = sequence >=> put . toList
+buildQuiz :: (MonadState (Deck Question) m, Traversable t) => t (m Question) -> m ()
+buildQuiz = sequence >=> put . fromFoldable
 
 runQuiz :: Quiz -> IO Result
 runQuiz quiz = runQuizApp (quiz >> askQuestions)
 
 runQuizApp :: QuizApp a -> IO a
-runQuizApp (QuizApp app) = getStdGen >>= (flip evalStateT) [] . evalRandT app
+runQuizApp (QuizApp app) = getStdGen >>= (flip evalStateT) mempty . evalRandT app
 
 -- Asking questions to the user.
 askQuestions :: QuizApp Result
 askQuestions = do
-    question <- pickQuestion atRandom
+    question <- pickQuestion
     case question of Nothing -> return mempty
                      Just q  -> liftM2 (<>) (liftIO $ askQuestion q) askQuestions
 
@@ -55,28 +56,21 @@ askQuestion q = do
     return result
 
 -- Ways of mutating the set of remaining questions.
--- TODO: Find a way to use more general list picking functions but still keep the
---       return type bound to `Question`.
-pickQuestion :: MonadState RemainingQns m => Picker m Question -> m (Maybe Question)
-pickQuestion f = do
+pickQuestion :: (MonadRandom m, MonadState (Deck Question) m) => m (Maybe Question)
+pickQuestion = do
     currentQuiz <- get
-    choice <- f currentQuiz
+    choice <- drawFrom randomLocation currentQuiz
     case choice of
         Nothing -> return Nothing
         Just (question, rest) -> do
             put rest
             return $ Just question
 
-type Picker m a = Applicative m => [a] -> m (Maybe (a, [a]))
-
-fromTop :: Picker m a
-fromTop = pure . uncons
-
-atRandom :: MonadRandom m => Picker m a
-atRandom = unconsRandom
-
-putQuestion :: MonadState RemainingQns m => Question -> m ()
-putQuestion q = modify (q:)
+putQuestion :: MonadState (Deck Question) m => Question -> m ()
+putQuestion q = do
+    currentDeck <- get
+    updatedDeck <- insert q currentDeck
+    put updatedDeck
 
 -- Data structures representing questions.
 data Question = Question { music :: Music Pitch
@@ -84,9 +78,6 @@ data Question = Question { music :: Music Pitch
                          , test :: (String -> Bool)
                          , successText :: String
                          , failureText :: String }
-
--- TODO: Re-assess whether [Question] is the right type here.
-type RemainingQns = [Question]
 
 -- Types of Question
 intervalQuestion :: MonadRandom m => m Question

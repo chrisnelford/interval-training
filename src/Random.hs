@@ -2,6 +2,7 @@ module Random
     ( randomOctave
     , randomPitch
     , randomInterval
+    , consRandom
     , unconsRandom
     , module Control.Monad.Random
     ) where
@@ -45,9 +46,18 @@ randomInterval = do
     interval <- getRandomR (1, 12)
     return (basePitch, interval)
 
-unconsRandom :: (MonadRandom m) => [a] -> m (Maybe (a, [a]))
+unconsRandom :: MonadRandom m => [a] -> m (Maybe (a, [a]))
 unconsRandom [] = return Nothing
 unconsRandom xs = do
     index <- getRandomR (0, (length xs) - 1)
     let (start, rest) = splitAt index xs
     return $ Just (head rest, start ++ tail rest)
+
+-- In a list of length n, there are n+1 places to insert a new element:
+--   * at the head of the list (1 location)
+--   * after each element in the list (n locations)
+consRandom :: MonadRandom m => a -> [a] -> m [a]
+consRandom x xs = do
+    index <- getRandomR (0, length xs)
+    let (start, rest) = splitAt index xs
+    return $ start ++ (x:rest)
