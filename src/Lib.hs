@@ -4,8 +4,6 @@ module Lib
 
 import Control.Monad
 import Control.Monad.State
-import Data.List (uncons)
-import Data.Foldable (toList)  -- Needed because Quiz is a list
 import Text.Printf
 
 import Euterpea
@@ -31,6 +29,8 @@ type Quiz = QuizApp ()
 buildQuiz :: (MonadState (Deck Question) m, Traversable t) => t (m Question) -> m ()
 buildQuiz = sequence >=> put . fromFoldable
 
+-- TODO: Something's a bit off about the way this handles state. The set of questions
+--       to run in a quiz and the app that runs the quiz seem coupled too tightly.
 runQuiz :: Quiz -> IO Result
 runQuiz quiz = runQuizApp (quiz >> askQuestions)
 

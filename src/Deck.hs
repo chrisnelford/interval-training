@@ -17,6 +17,7 @@ import Data.List (uncons)
 import Data.Foldable (toList)
 import Random (unconsRandom, consRandom)
 
+-- TODO: Update `Deck` to use a more suitable data structure.
 newtype Deck a = Deck { unpack :: [a] }
   deriving (Semigroup, Monoid, Functor, Foldable, Applicative)
 
