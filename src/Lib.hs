@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 module Lib
     ( run
     ) where
@@ -39,10 +40,11 @@ runQuizApp (QuizApp app) = getStdGen >>= (flip evalStateT) [] . evalRandT app
 -- Asking questions to the user.
 askQuestions :: QuizApp Result
 askQuestions = do
-    question <- pickRandomQuestion
+    question <- pickQuestion atRandom
     case question of Nothing -> return mempty
                      Just q  -> liftM2 (<>) (liftIO $ askQuestion q) askQuestions
 
+-- TODO: Put questions back on the list if they are bad.
 askQuestion :: Question -> IO Result
 askQuestion q = do
     play $ music q
@@ -56,8 +58,8 @@ askQuestion q = do
 -- Ways of mutating the set of remaining questions.
 -- TODO: Find a way to use more general list picking functions but still keep the
 --       return type bound to `Question`.
-pickQuestionWith :: (MonadRandom m, MonadState RemainingQns m) => ([Question] -> m (Maybe (Question, [Question]))) -> m (Maybe Question)
-pickQuestionWith f = do
+pickQuestion :: MonadState RemainingQns m => Picker m -> m (Maybe Question)
+pickQuestion f = do
     currentQuiz <- get
     choice <- f currentQuiz
     case choice of
@@ -66,13 +68,13 @@ pickQuestionWith f = do
             put rest
             return $ Just question
 
--- TODO: Find a way to relax the `MonadRandom m` constraint as it's not needed
---       to pick a question without any randomness.
-pickNextQuestion :: (MonadRandom m, MonadState RemainingQns m) => m (Maybe Question)
-pickNextQuestion = pickQuestionWith (return . uncons)
+type Picker m = Applicative m => [Question] -> m (Maybe (Question, [Question]))
 
-pickRandomQuestion :: (MonadRandom m, MonadState RemainingQns m) => m (Maybe Question)
-pickRandomQuestion = pickQuestionWith unconsRandom
+fromTop :: Picker m
+fromTop = pure . uncons
+
+atRandom :: MonadRandom m => Picker m
+atRandom = unconsRandom
 
 putQuestion :: MonadState RemainingQns m => Question -> m ()
 putQuestion q = modify (q:)
@@ -84,6 +86,7 @@ data Question = Question { music :: Music Pitch
                          , successText :: String
                          , failureText :: String }
 
+-- TODO: Re-assess whether [Question] is the right type here.
 type RemainingQns = [Question]
 
 -- Types of Question
