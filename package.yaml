@@ -23,6 +23,7 @@ default-extensions:
 - GeneralizedNewtypeDeriving
 - FlexibleContexts
 - TupleSections
+- RankNTypes
 
 dependencies:
 - base >= 4.7 && < 5
