@@ -59,6 +59,31 @@ fromFoldable :: Foldable f => f a -> Deck a
 fromFoldable = Deck . toList
 
 -- Ways of picking cards from the deck.
+--
+-- This use of applicative is a bit obnoxious. As long as
+-- you give me a type `m` of kind (* -> *) and a function
+-- `forall a. a -> m a`, I should be able to fulfill the contract.
+--
+-- In a context where `m` is an Applicative or Monad, it makes
+-- sense to use `pure`, but there's no reason to constrain the
+-- embedding function unless the particular `Picker` needs a
+-- context with more features.
+--
+-- TODO: Look into whether there's some weaker constraint that
+--       captures the "embedding" part of `Applicative`, without
+--       requiring the `Functor` and application parts.
+--
+--       Alternatively, define my own "Natural embedding"
+--       typeclass, that uses `pure` for any applicative.
+--
+--       Alternatively, find a better way to abstract over
+--       contexts.
+--
+--       Alternatively, decide this is not worth worrying
+--       about.
+--
+-- TODO: Think more generally about how to express the existence
+--       of embeddings in Haskell.
 type Picker m a = Applicative m => [a] -> m (Maybe (a, [a]))
 
 fromTop :: Picker m a
