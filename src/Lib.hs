@@ -57,7 +57,7 @@ askQuestion q = do
 -- Ways of mutating the set of remaining questions.
 -- TODO: Find a way to use more general list picking functions but still keep the
 --       return type bound to `Question`.
-pickQuestion :: MonadState RemainingQns m => Picker m -> m (Maybe Question)
+pickQuestion :: MonadState RemainingQns m => Picker m Question -> m (Maybe Question)
 pickQuestion f = do
     currentQuiz <- get
     choice <- f currentQuiz
@@ -67,12 +67,12 @@ pickQuestion f = do
             put rest
             return $ Just question
 
-type Picker m = Applicative m => [Question] -> m (Maybe (Question, [Question]))
+type Picker m a = Applicative m => [a] -> m (Maybe (a, [a]))
 
-fromTop :: Picker m
+fromTop :: Picker m a
 fromTop = pure . uncons
 
-atRandom :: MonadRandom m => Picker m
+atRandom :: MonadRandom m => Picker m a
 atRandom = unconsRandom
 
 putQuestion :: MonadState RemainingQns m => Question -> m ()
