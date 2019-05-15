@@ -22,7 +22,6 @@ description:         Please see the README on GitHub at <https://github.com/gith
 default-extensions:
 - GeneralizedNewtypeDeriving
 - FlexibleContexts
-- TupleSections
 - RankNTypes
 - GADTs
 
