@@ -9,6 +9,7 @@ module Result
 -- Keeping track of score as a quiz runs.
 data Result = Result { successes :: Int
                      , failures :: Int }
+              deriving (Show, Eq)
 
 instance Semigroup Result where
     (<>) (Result s1 f1) (Result s2 f2) = Result (s1 + s2) (f1 + f2)
