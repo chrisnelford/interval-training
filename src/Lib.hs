@@ -8,7 +8,7 @@ import Text.Printf
 
 import Euterpea
 
-import Deck (Deck, fromFoldable, insert, drawFrom, randomLocation)
+import Deck (Deck, fromFoldable, insert, drawFrom, Location(..))
 import Random
 import Result
 
@@ -59,7 +59,7 @@ askQuestion q = do
 pickQuestion :: (MonadRandom m, MonadState (Deck Question) m) => m (Maybe Question)
 pickQuestion = do
     currentQuiz <- get
-    choice <- drawFrom randomLocation currentQuiz
+    choice <- drawFrom Random currentQuiz
     case choice of
         Nothing -> return Nothing
         Just (question, rest) -> do

@@ -2,17 +2,14 @@
 module Deck
     ( Deck
     , fromFoldable
-    , Location
+    , Location(..)
     , draw
     , insert
     , drawFrom
     , insertAt
-    , top
-    , bottom
-    , randomLocation
     ) where
 
-import Control.Monad.Random
+import Control.Monad.Random (MonadRandom)
 import Data.List (uncons)
 import Data.Foldable (toList)
 import Random (unconsRandom, consRandom)
@@ -21,36 +18,26 @@ import Random (unconsRandom, consRandom)
 newtype Deck a = Deck { unpack :: [a] }
   deriving (Semigroup, Monoid, Functor, Foldable, Applicative)
 
--- TODO: Try to find a way to wrap up `Location` as a type without
---       any variables, so that the deck can help users out by figuring
---       out the right values of m and a.
-data Location m a = Location { picker :: Picker m a
-                             , insertion :: Insertion m a }
-
-top :: Location m a
-top = Location fromTop toTop
-
-bottom :: Location m a
-bottom = Location fromBottom toBottom
-
-randomLocation :: MonadRandom m => Location m a
-randomLocation = Location fromRandom toRandom
+data Location m where
+  Top :: Location m
+  Bottom :: Location m
+  Random :: MonadRandom m => Location m
 
 draw :: Applicative m => Deck a -> m (Maybe (a, Deck a))
-draw = drawFrom top
+draw = drawFrom Top
 
 insert :: Applicative m => a -> Deck a -> m (Deck a)
-insert = insertAt bottom
+insert = insertAt Bottom
 
 -- TODO: Consider merging `Maybe` into the computational context.
 -- TODO: Figure out a way to avoid writing `Applicative` in as many
 --       places.
-drawFrom :: Applicative m => Location m a ->
+drawFrom :: Applicative m => Location m ->
                              Deck a -> m (Maybe (a, Deck a))
 drawFrom location (Deck xs) = tidy $ (picker location) xs
   where tidy = (fmap . fmap . fmap) Deck
 
-insertAt :: Applicative m => Location m a ->
+insertAt :: Applicative m => Location m ->
                              a -> Deck a -> m (Deck a)
 insertAt location x (Deck xs) = tidy $ (insertion location) x xs
   where tidy = fmap Deck
@@ -86,24 +73,16 @@ fromFoldable = Deck . toList
 --       of embeddings in Haskell.
 type Picker m a = Applicative m => [a] -> m (Maybe (a, [a]))
 
-fromTop :: Picker m a
-fromTop = pure . uncons
-
 -- TODO: Define insertion at bottom.
-fromBottom :: Picker m a
-fromBottom = undefined
+picker :: Location m -> Picker m a
+picker Top = pure . uncons
+picker Bottom = undefined
+picker Random = unconsRandom
 
-fromRandom :: MonadRandom m => Picker m a
-fromRandom = unconsRandom
-
--- TODO: ways of inserting cards into the deck.
+-- Ways of inserting cards into the deck.
 type Insertion m a = Applicative m => a -> [a] -> m [a]
 
-toTop :: Insertion m a
-toTop x xs = pure (x:xs)
-
-toBottom :: Insertion m a
-toBottom x xs = pure (xs ++ [x])
-
-toRandom :: MonadRandom m => Insertion m a
-toRandom = consRandom
+insertion :: Location m -> Insertion m a
+insertion Top = \x xs -> pure (x:xs)
+insertion Bottom = \x xs -> pure (xs ++ [x])
+insertion Random = consRandom

@@ -4,8 +4,14 @@ module Random
     , randomInterval
     , consRandom
     , unconsRandom
-    , module Control.Monad.Random
+    , MonadRandom
+    , RandT
+    , StdGen
+    , evalRandT
+    , getStdGen
     ) where
+-- TODO: rationalize the exports from this module so it doesn't export
+--       an arbitrary selection of tools from the System.Random.
 
 import System.Random
 
