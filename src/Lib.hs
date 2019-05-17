@@ -37,6 +37,9 @@ runQuiz quiz = runQuizApp (quiz >> askQuestions)
 runQuizApp :: QuizApp a -> IO a
 runQuizApp (QuizApp app) = getStdGen >>= (flip evalStateT) mempty . evalRandT app
 
+maxQuestions :: Int
+maxQuestions = 10
+
 -- Run a quiz by asking the users all of the questions.
 -- If the user gets a question wrong, put it back in the deck
 -- and ask it again later.
@@ -48,8 +51,9 @@ askQuestions = do
          where processQuestion :: Question -> QuizApp Result
                processQuestion q = do
                     result <- liftIO $ askQuestion q
-                    if result == failure then putQuestion q
-                                         else return ()
+                    if | total result >= maxQuestions -> put mempty
+                       | result == failure -> putQuestion q
+                       | otherwise -> return ()
                     return result
 
 askQuestion :: Question -> IO Result

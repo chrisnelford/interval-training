@@ -24,6 +24,7 @@ default-extensions:
 - FlexibleContexts
 - RankNTypes
 - GADTs
+- MultiWayIf
 
 dependencies:
 - base >= 4.7 && < 5
