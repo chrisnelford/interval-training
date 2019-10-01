@@ -11,6 +11,8 @@ import Euterpea
 import Deck (Deck, fromFoldable, insert, drawFrom, Location(..))
 import Random
 import Result
+import qualified Question as Question
+import qualified Quiz as Quiz
 
 -- Entry Point
 run :: IO ()
@@ -18,24 +20,30 @@ run = do
     result <- runQuiz myQuiz
     putStrLn $ resultSummary result
 
-myQuiz :: Quiz
-myQuiz = buildQuiz (replicate 3 singleToneQuestion ++ replicate 2 intervalQuestion)
+-- myQuiz :: OldQuiz
+-- myQuiz = buildQuiz (replicate 3 singleToneQuestion ++ replicate 2 intervalQuestion)
 
-newtype QuizApp a = QuizApp (RandT StdGen (StateT (Deck Question) IO) a)
-  deriving (Functor, Applicative, Monad, MonadRandom, MonadState (Deck Question), MonadIO)
+newtype QuizApp a = QuizApp (RandT StdGen (StateT (Deck Question.Question) IO) a)
+  deriving (Functor, Applicative, Monad, MonadRandom, MonadState (Deck Question.Question), MonadIO)
 
-type Quiz = QuizApp ()
+type OldQuiz = QuizApp ()
 
-buildQuiz :: (MonadState (Deck Question) m, Traversable t) => t (m Question) -> m ()
-buildQuiz = sequence >=> put . fromFoldable
+-- buildQuiz :: (MonadState (Deck Question) m, Traversable t) => t (m Question) -> m ()
+-- buildQuiz = sequence >=> put . fromFoldable
 
--- TODO: Something's a bit off about the way this handles state. The set of questions
---       to run in a quiz and the app that runs the quiz seem coupled too tightly.
-runQuiz :: Quiz -> IO Result
-runQuiz quiz = runQuizApp (quiz >> askQuestions)
+runQuiz :: Quiz.Quiz -> IO Result
+runQuiz = undefined
 
-runQuizApp :: QuizApp a -> IO a
-runQuizApp (QuizApp app) = getStdGen >>= (flip evalStateT) mempty . evalRandT app
+myQuiz :: Quiz.Quiz
+myQuiz = undefined
+
+-- -- TODO: Something's a bit off about the way this handles state. The set of questions
+-- --       to run in a quiz and the app that runs the quiz seem coupled too tightly.
+-- runQuizOld :: OldQuiz -> IO Result
+-- runQuizOld quiz = runQuizApp (quiz >> askQuestions)
+
+-- runQuizApp :: QuizApp a -> IO a
+-- runQuizApp (QuizApp app) = getStdGen >>= (flip evalStateT) mempty . evalRandT app
 
 maxQuestions :: Int
 maxQuestions = 10
@@ -48,7 +56,7 @@ askQuestions = do
     question <- pickQuestion
     case question of Nothing -> return mempty
                      Just q  -> liftM2 (<>) (processQuestion q) askQuestions
-         where processQuestion :: Question -> QuizApp Result
+         where processQuestion :: Question.Question -> QuizApp Result
                processQuestion q = do
                     result <- liftIO $ askQuestion q
                     if | total result >= maxQuestions -> put mempty
@@ -56,18 +64,18 @@ askQuestions = do
                        | otherwise -> return ()
                     return result
 
-askQuestion :: Question -> IO Result
+askQuestion :: Question.Question -> IO Result
 askQuestion q = do
-    play $ music q
-    putStrLn $ prompt q
+    play $ Question.music q
+    putStrLn $ Question.prompt q
     answer <- getLine
-    let (response, result) | (test q) answer = (successText q, success)
-                           | otherwise       = (failureText q, failure)
+    let (response, result) | (Question.test q) answer = (Question.successText q, success)
+                           | otherwise       = (Question.failureText q, failure)
     putStrLn response
     return result
 
 -- Ways of mutating the set of remaining questions.
-pickQuestion :: (MonadRandom m, MonadState (Deck Question) m) => m (Maybe Question)
+pickQuestion :: (MonadRandom m, MonadState (Deck Question.Question) m) => m (Maybe Question.Question)
 pickQuestion = do
     currentQuiz <- get
     choice <- drawFrom Random currentQuiz
@@ -77,40 +85,33 @@ pickQuestion = do
             put rest
             return $ Just question
 
-putQuestion :: MonadState (Deck Question) m => Question -> m ()
+putQuestion :: MonadState (Deck Question.Question) m => Question.Question -> m ()
 putQuestion q = do
     currentDeck <- get
     updatedDeck <- insert q currentDeck
     put updatedDeck
 
--- Data structures representing questions.
-data Question = Question { music :: Music Pitch
-                         , prompt :: String
-                         , test :: (String -> Bool)
-                         , successText :: String
-                         , failureText :: String }
-
 -- Types of Question
-intervalQuestion :: MonadRandom m => m Question
+intervalQuestion :: MonadRandom m => m Question.Question
 intervalQuestion = do
     (pitch, interval) <- randomIntervalFromMiddleC
-    return $ Question {
-        music       = buildInterval pitch interval,
-        prompt      = "How many semitones?",
-        test        = (== interval) . read,
-        successText = correct,
-        failureText = "Wrong: that was " ++ show interval ++ " semitones."
+    return $ Question.Question {
+        Question.music       = buildInterval pitch interval,
+        Question.prompt      = "How many semitones?",
+        Question.test        = (== interval) . read,
+        Question.successText = correct,
+        Question.failureText = "Wrong: that was " ++ show interval ++ " semitones."
         }
 
-singleToneQuestion :: MonadRandom m => m Question
+singleToneQuestion :: MonadRandom m => m Question.Question
 singleToneQuestion = do
     (pitchClass, octave) <- randomPitchInMiddleOctave
-    return $ Question {
-        music       = buildTone (pitchClass, octave),
-        prompt      = "What note did you hear?",
-        test        = (samePitchClass pitchClass) . read,
-        successText = correct,
-        failureText = "Wrong: that was a " ++ show pitchClass ++ "."
+    return $ Question.Question {
+        Question.music       = buildTone (pitchClass, octave),
+        Question.prompt      = "What note did you hear?",
+        Question.test        = (samePitchClass pitchClass) . read,
+        Question.successText = correct,
+        Question.failureText = "Wrong: that was a " ++ show pitchClass ++ "."
         }
 
 -- Utilites for contructing musical objects
