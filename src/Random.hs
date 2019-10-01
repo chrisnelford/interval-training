@@ -1,7 +1,9 @@
 module Random
     ( randomOctave
     , randomPitch
+    , randomPitchInMiddleOctave
     , randomInterval
+    , randomIntervalFromMiddleC
     , consRandom
     , unconsRandom
     , MonadRandom
@@ -27,6 +29,9 @@ import Euterpea
 canonicalNotes :: [PitchClass]
 canonicalNotes = [C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B]
 
+middleC :: Pitch
+middleC = (C, 4)
+
 instance Random PitchClass where
     randomR (lower, upper) g = runRand (fromList distribution) g
         where distribution = weighted $ filter inRange canonicalNotes
@@ -44,6 +49,11 @@ randomPitch = do
     octave <- randomOctave
     return (pitchClass, octave)
 
+randomPitchInMiddleOctave :: MonadRandom m => m Pitch
+randomPitchInMiddleOctave = do
+    pitchClass <- getRandom
+    return (pitchClass, 4)
+
 -- There are 12 semitones in a whole octave, so a number between
 -- 1 and 12 with give any possible ascending interval.
 randomInterval :: MonadRandom m => m (Pitch, Int)
@@ -51,6 +61,13 @@ randomInterval = do
     basePitch <- randomPitch
     interval <- getRandomR (1, 12)
     return (basePitch, interval)
+
+-- There are 12 semitones in a whole octave, so a number between
+-- 1 and 12 with give any possible ascending interval.
+randomIntervalFromMiddleC :: MonadRandom m => m (Pitch, Int)
+randomIntervalFromMiddleC = do
+    interval <- getRandomR (1, 12)
+    return (middleC, interval)
 
 unconsRandom :: MonadRandom m => [a] -> m (Maybe (a, [a]))
 unconsRandom [] = return Nothing

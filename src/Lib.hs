@@ -93,7 +93,7 @@ data Question = Question { music :: Music Pitch
 -- Types of Question
 intervalQuestion :: MonadRandom m => m Question
 intervalQuestion = do
-    (pitch, interval) <- randomInterval
+    (pitch, interval) <- randomIntervalFromMiddleC
     return $ Question {
         music       = buildInterval pitch interval,
         prompt      = "How many semitones?",
@@ -104,7 +104,7 @@ intervalQuestion = do
 
 singleToneQuestion :: MonadRandom m => m Question
 singleToneQuestion = do
-    (pitchClass, octave) <- randomPitch
+    (pitchClass, octave) <- randomPitchInMiddleOctave
     return $ Question {
         music       = buildTone (pitchClass, octave),
         prompt      = "What note did you hear?",
