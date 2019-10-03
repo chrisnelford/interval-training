@@ -25,6 +25,7 @@ default-extensions:
 - RankNTypes
 - GADTs
 - MultiWayIf
+- LambdaCase
 
 dependencies:
 - base >= 4.7 && < 5

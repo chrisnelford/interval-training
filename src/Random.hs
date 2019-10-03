@@ -9,7 +9,9 @@ module Random
     , MonadRandom
     , RandT
     , StdGen
+    , RandomGen
     , evalRandT
+    , evalRand
     , getStdGen
     ) where
 -- TODO: rationalize the exports from this module so it doesn't export
