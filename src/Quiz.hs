@@ -19,8 +19,6 @@ import Music ( buildTone
 import Random ( randomIntervalFromMiddleC
               , randomPitchInMiddleOctave )
 
-import qualified Result
-
 -- A quiz is a source of questions.
 type Quiz = Seq.Seq Question
 
