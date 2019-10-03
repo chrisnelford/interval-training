@@ -10,29 +10,30 @@ module Quiz
 
 import qualified Euterpea as E
 
-import Data.List (uncons)
+import qualified Data.Sequence as Seq
 import qualified Control.Monad.Random as R
 
 import Music ( buildTone
              , buildInterval
              , samePitchClass )
-
 import Random ( randomIntervalFromMiddleC
               , randomPitchInMiddleOctave )
 
 import qualified Result
 
 -- A quiz is a source of questions.
-type Quiz = [Question]
+type Quiz = Seq.Seq Question
 
 next :: Quiz -> Maybe (Question, Quiz)
-next = uncons
+next quiz = case Seq.viewl quiz of
+    Seq.EmptyL -> Nothing
+    x Seq.:< xs -> Just (x, xs)
 
 add :: Question -> Quiz -> Quiz
-add = (:)
+add = flip (Seq.|>)
 
 build :: R.StdGen -> [R.Rand R.StdGen Question] -> Quiz
-build gen questions = R.evalRand (sequence questions) gen
+build gen questions = Seq.fromList $ R.evalRand (sequence questions) gen
 
 -- Data structures representing questions.
 data Question = Question { music :: E.Music E.Pitch
